@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "devicefarm:ListTestGridProjects",
+        "devicefarm:CreateTestGridProject"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "devicefarm:ListTestGridSessions"
+      ],
+      "Resource": "arn:aws:devicefarm:us-west-2:${Account}:testgrid-project:${ProjectId}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "devicefarm:ListTestGridSessionArtifacts"
+      ],
+      "Resource": [
+        "arn:aws:devicefarm:us-west-2:${Account}:testgrid-project:${ProjectId}",
+        "arn:aws:devicefarm:us-west-2:${Account}:testgrid-session:${ProjectId}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "devicefarm:CreateTestGridUrl"
+      ],
+      "Resource": "arn:aws:devicefarm:us-west-2:${Account}:testgrid-project:${ProjectId}"
+    }
+  ]
+}

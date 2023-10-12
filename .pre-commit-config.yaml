@@ -1,0 +1,42 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+# General
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args:
+          - --fix=lf
+        exclude: /package-lock\.json$
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        exclude: ^dist/
+        args: ["--maxkb=1024"]
+      - id: check-json
+      - id: check-yaml
+      - id: detect-private-key
+      - id: pretty-format-json
+        args:
+          - --autofix
+          - --indent=2
+          - --no-sort-keys
+        exclude: /package-lock\.json$
+
+  # Secrets
+  - repo: https://github.com/awslabs/git-secrets
+    rev: b9e96b3212fa06aea65964ff0d5cda84ce935f38
+    hooks:
+      - id: git-secrets
+        entry: "git-secrets --scan"
+        files: "."
+
+  # JS
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.47.0
+    hooks:
+      - id: eslint
+        exclude: ^dist/

@@ -1,0 +1,36 @@
+name: 'AWS Device Farm Browser Testing GitHub Action'
+author: 'AWS Device Farm'
+description: 'GitHub action for automated browser testing on AWS Device Farm'
+branding:
+  icon: 'cloud'
+  color: 'orange'
+inputs:
+    mode:
+      description: >-
+        The mode to run the action in. Ther are 2 values supported:
+        Specify `project` mode when you require creation or looking up of an AWS Device Farm Project ARN.
+        Specify `artifact` mode when you require retrieval of artifacts from an existing AWS Device Farm Project ARN.
+      required: true
+    project-arn:
+      description: >-
+        The ARN of the AWS Device Farm Browser Testing Project. Alternatively supply a name and a project will be created on your behalf
+      required: true
+    artifact-types:
+      description: >-
+        (Optional) A comma delimited list of Device Farm Artifacts that should be downloaded after the jobs completes.
+        https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-device-farm/Variable/TestGridSessionArtifactCategory/
+        Note: To download all artifact types set the value to ALL. To download none skip this input.
+        They will be downloaded to a folder. The name of the folder can be found by referencing the output with name artifact-folder. Please use the GitHub Action [upload-artifact](https://github.com/actions/upload-artifact) to store them.
+      required: false
+      default: ''
+    artifact-folder:
+      description: >-
+        (optional) The name of the folder that the test artifacts are downloaded into.
+      required: false
+      default: 'artifacts'
+outputs:
+  project-arn:
+    description: 'The ARN of the AWS Device Farm Browser Testing Project'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
