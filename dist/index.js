@@ -91,7 +91,6 @@ async function generateGridUrl(projectArn, expiresInSeconds) {
     });
     core.info("Generating Project Grid URL...");
     const createTestGridUrlRes = await deviceFarm.send(createTestGridUrlCommand);
-    console.log(createTestGridUrlRes);
     core.setOutput(OUTPUTS.gridUrl, createTestGridUrlRes.url);
     core.setOutput(OUTPUTS.gridUrlExpires, createTestGridUrlRes.expires.toISOString());
 }
