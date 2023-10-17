@@ -3,6 +3,7 @@ const {
     DeviceFarmClient,
     ListTestGridProjectsCommand,
     CreateTestGridProjectCommand,
+    CreateTestGridUrlCommand,
     ListTestGridSessionsCommand,
     ListTestGridSessionArtifactsCommand,
 } = require("@aws-sdk/client-device-farm");
@@ -20,7 +21,8 @@ jest.mock("@actions/core");
 function mockGetInput(requestResponse) {
     const defaults = {
         "artifact-types": "",
-        "artifact-folder": "artifacts"
+        "artifact-folder": "artifacts",
+        "url-expires-seconds": 900,
     }
     return function (name, options) { // eslint-disable-line no-unused-vars
         if (!requestResponse[name]) {
@@ -83,6 +85,8 @@ describe("Run", () => {
         expect(mockDeviceFarm).toHaveReceivedCommandWith(CreateTestGridProjectCommand, {name: "fake-name"});
         expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridSessionsCommand, 0);
         expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridSessionArtifactsCommand, 0);
+        expect(core.setOutput).toHaveBeenCalledWith("project-arn", "arn:aws:devicefarm:us-west-2:account-d:testgrid-project:project-id");
+        expect(core.setOutput).toHaveBeenCalledWith("console-url", "https://us-west-2.console.aws.amazon.com/devicefarm/home#/browser/projects/project-id/runsselenium");
         expect(core.setFailed).toHaveBeenCalledTimes(0);
     });
 
@@ -127,6 +131,33 @@ describe("Run", () => {
         expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridProjectsCommand, 0);
         expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridSessionsCommand, 0);
         expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridSessionArtifactsCommand, 0);
+        expect(core.setFailed).toHaveBeenCalledTimes(0);
+    });
+
+    it("should return supplied project arn and retrieve grid test url", async () => {
+        const INPUTS = {
+            "mode": "gridurl",
+            "project-arn": "arn:fake-arn",
+        };
+        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        mockDeviceFarm
+            .on(CreateTestGridUrlCommand, {
+                projectArn: "arn:fake-arn",
+                expiresInSeconds: 900
+            })
+            .resolvesOnce({
+                url: "fake-url",
+                expires: new Date(2000, 1, 2, 3, 4, 5, 678),
+            });
+
+        await run();
+
+        expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridProjectsCommand, 0);
+        expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridSessionsCommand, 0);
+        expect(mockDeviceFarm).toHaveReceivedCommandTimes(ListTestGridSessionArtifactsCommand, 0);
+        expect(mockDeviceFarm).toHaveReceivedCommandWith(CreateTestGridUrlCommand, {projectArn: "arn:fake-arn", expiresInSeconds: 900});
+        expect(core.setOutput).toHaveBeenCalledWith("grid-url", "fake-url");
+        expect(core.setOutput).toHaveBeenCalledWith("grid-url-expires", "2000-02-02T03:04:05.678Z");
         expect(core.setFailed).toHaveBeenCalledTimes(0);
     });
 

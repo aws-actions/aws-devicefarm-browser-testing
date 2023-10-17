@@ -9,12 +9,18 @@ inputs:
       description: >-
         The mode to run the action in. Ther are 2 values supported:
         Specify `project` mode when you require creation or looking up of an AWS Device Farm Project ARN.
+        Specify `gridurl` mode when you require a Test Grid URL.
         Specify `artifact` mode when you require retrieval of artifacts from an existing AWS Device Farm Project ARN.
       required: true
     project-arn:
       description: >-
         The ARN of the AWS Device Farm Browser Testing Project. Alternatively supply a name and a project will be created on your behalf
       required: true
+    url-expires-seconds:
+      description: >-
+        Lifetime, in seconds, of the Test Grid URL.
+      required: false
+      default: 900
     artifact-types:
       description: >-
         (Optional) A comma delimited list of Device Farm Artifacts that should be downloaded after the jobs completes.
@@ -29,8 +35,14 @@ inputs:
       required: false
       default: 'artifacts'
 outputs:
+  console-url:
+    description: 'The AWS Console URL for the Test Grid Project'
   project-arn:
     description: 'The ARN of the AWS Device Farm Browser Testing Project'
+  grid-url:
+    description: 'The AWS Device Farm Test Grid URL (only available in gridurl mode)'
+  grid-url-expires:
+    description: 'The Datetime that the supplied grid-url will expire formatted as YYYY-MM-DDThh:mm:ss.fffZ'
 runs:
   using: 'node16'
   main: 'dist/index.js'
