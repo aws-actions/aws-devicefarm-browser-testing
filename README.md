@@ -17,15 +17,17 @@ For example, testing new versions of code being committed to a branch to ensure 
     - [Before each of the following examples, make sure to include the following](#before-each-of-the-following-examples-make-sure-to-include-the-following)
     - [Creating a new AWS Device Farm Project](#creating-a-new-aws-device-farm-project)
     - [Lookup an existing AWS Device Farm Project](#lookup-an-existing-aws-device-farm-project)
+    - [Generate a Test Grid URL for an existing AWS Device Farm Project](#generate-a-test-grid-url-for-an-existing-aws-device-farm-project)
     - [Retrieve All artifacts](#retrieve-all-artifacts)
     - [Retrieve VIDEO and LOG artifacts](#retrieve-video-and-log-artifacts)
     - [Putting it all together with webdriver.io to execute the tests](#putting-it-all-together-with-webdriverio-to-execute-the-tests)
+    - [Putting it all together with Selenium to execute the tests](#putting-it-all-together-with-selenium-to-execute-the-tests)
   - [Credentials](#credentials)
     - [AWS Credentials](#aws-credentials)
   - [Permissions](#permissions)
     - [Running the action in `project` mode only](#running-the-action-in-project-mode-only)
+    - [Running the action in `gridurl` mode only](#running-the-action-in-gridurl-mode-only)
     - [Running the action in `artifact` mode only](#running-the-action-in-artifact-mode-only)
-    - [Optional permissions](#optional-permissions)
   - [License Summary](#license-summary)
   - [Security Disclosures](#security-disclosures)
 
@@ -35,19 +37,24 @@ For example, testing new versions of code being committed to a branch to ensure 
 
 - mode: **REQUIRED** The mode to execute the action in. Valid values are `project`, when you require creation or looking up of an AWS Device Farm Project ARN, or `artifact`, when you require retrieval of artifacts from an existing AWS Device Farm Project ARN.
 - project-arn: **REQUIRED** The name (or arn) of the Device Farm Project. In addition to supporting the value of an ARN of an existing Project, this field supports the use of a **name** as well. For example, if `"project-arn": "Test"` is supplied, the Action will perform a lookup in the AWS Account to find and retrieve the ARN of the AWS Device Farm Project with the name `Test`. If a **name** is supplied but not found a new Project with the supplied name will be created and the ARN of that newly created Project will be used.
+- url-expires-seconds: **OPTIONAL** Lifetime, in seconds, of the Test Grid URL. Defaults to 900 if not specified.
 - artifact-types: **OPTIONAL** A comma-delimited list of artifacts to be downloaded after the run completes. The valid values can be found [here](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-device-farm/Variable/TestGridSessionArtifactCategory/). No artifacts will be downloaded if this property is not supplied.
 - artifact-folder: **OPTIONAL** The name of the folder where the artifacts are downloaded. Defaults to 'artifacts' if not specified.
 
 ## Output options
 
-- project-arn: The ARN of the AWS Device Farm Project that was used.
+- console-url: The AWS Console URL for the Test Grid Project
+- project-arn: The ARN of the AWS Device Farm Browser Testing Project
+- grid-url: The AWS Device Farm Test Grid URL (only available in gridurl mode)
+- grid-url-expires: The Datetime that the supplied grid-url will expire formatted as YYYY-MM-DDThh:mm:ss.fffZ
 
 ## Examples of Usage
 
-This action is designed to be used in two different ways.
+This action is designed to be used in three different ways.
 
 1. Create or lookup an AWS Device Farm Project ARN
-2. Retrieve all the Artifacts for all sessions for a specific AWS Device Farm Project
+2. Generate a Test Grid URL for a specified a AWS Device Farm Project
+3. Retrieve all the Artifacts for all sessions for a specific AWS Device Farm Project
 
 ### Before each of the following examples, make sure to include the following
 
@@ -75,7 +82,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
           mode: project
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -86,9 +93,20 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Lookup Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
           mode: project
+          project-arn: Test # A Project with name 'Test' already exists in the AWS Account in this case.
+```
+
+### Generate a Test Grid URL for an existing AWS Device Farm Project
+
+```yaml
+      - name: Generate Test Grid URL
+        id: gridurl
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        with:
+          mode: gridurl
           project-arn: Test # A Project with name 'Test' already exists in the AWS Account in this case.
 ```
 
@@ -97,7 +115,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
           mode: artifact
           project-arn: Test
@@ -116,7 +134,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
           mode: artifact
           project-arn: Test
@@ -133,12 +151,12 @@ This action is designed to be used in two different ways.
 
 > **_NOTE:_**
 >
-> Examples on how to configure your repository to used webdriver.io can be found [here](https://webdriver.io/docs/githubactions/).
+> Examples on how to configure your repository to use webdriver.io can be found [here](https://webdriver.io/docs/githubactions/).
 
 ```yaml
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
           mode: project
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -153,7 +171,49 @@ This action is designed to be used in two different ways.
 
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        if: always() # This ensures the artifacts are retrieved even if the test(s) fails
+        with:
+          mode: artifact
+          project-arn: ${{ steps.project.outputs.project-arn }}
+          artifact-types: ALL
+
+      - uses: actions/upload-artifact@v3
+        if: always() # This ensures the artifacts are retrieved even if the test(s) fails
+        with:
+          name: AutomatedTestOutputFiles
+          path: artifacts
+```
+
+### Putting it all together with Selenium to execute the tests
+
+> **_NOTE:_**
+>
+> Examples on how to configure your repository to use Selenium can be found [here](???).
+
+```yaml
+      - name: Create Device Farm Project
+        id: project
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        with:
+          mode: project
+          project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
+
+      - name: Generate Test Grid URL
+        id: gridurl
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        with:
+          mode: gridurl
+          project-arn: ${{ steps.project.outputs.project-arn }}
+
+      - name: Test
+        run: '???'
+        env:
+          GRID_URL: ${{ steps.gridurl.outputs.grid-url }}
+
+      - name: Retrieve Device Farm Project Artifacts
+        id: artifacts
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           mode: artifact
@@ -184,7 +244,7 @@ This action relies on the [default behaviour of the AWS SDK for JavaScript](http
 
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
 ```
@@ -223,6 +283,30 @@ This action requires the following minimum set of permissions to run an Automate
 }
 ```
 
+### Running the action in `gridurl` mode only
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "devicefarm:ListTestGridProjects"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "devicefarm:CreateTestGridUrl"
+      ],
+      "Resource": "arn:aws:devicefarm:us-west-2:${Account}:testgrid-project:${ProjectId}"
+    }
+  ]
+}
+```
+
 ### Running the action in `artifact` mode only
 
 ```json
@@ -252,25 +336,6 @@ This action requires the following minimum set of permissions to run an Automate
         "arn:aws:devicefarm:us-west-2:${Account}:testgrid-project:${ProjectId}",
         "arn:aws:devicefarm:us-west-2:${Account}:testgrid-session:${ProjectId}/*"
       ]
-    }
-  ]
-}
-```
-
-### Optional permissions
-
-If your GitHub workflow is using the same AWS IAM Role to execute this action and also to run your AWS Device Farm Tests you will the AWS IAM Role will need one further IAM permission. This permission is shown below to make it easier for users, this permission is _not_ required to execute this action itself.
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "devicefarm:CreateTestGridUrl"
-      ],
-      "Resource": "arn:aws:devicefarm:us-west-2:${Account}:testgrid-project:${ProjectId}"
     }
   ]
 }
