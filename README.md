@@ -21,7 +21,7 @@ For example, testing new versions of code being committed to a branch to ensure 
     - [Retrieve All artifacts](#retrieve-all-artifacts)
     - [Retrieve VIDEO and LOG artifacts](#retrieve-video-and-log-artifacts)
     - [Putting it all together with webdriver.io to execute the tests](#putting-it-all-together-with-webdriverio-to-execute-the-tests)
-    - [Putting it all together with Selenium to execute the tests](#putting-it-all-together-with-selenium-to-execute-the-tests)
+    - [Putting it all together more generically using the Test Grid Url mode](#putting-it-all-together-more-generically-using-the-test-grid-url-mode)
   - [Credentials](#credentials)
     - [AWS Credentials](#aws-credentials)
   - [Permissions](#permissions)
@@ -185,31 +185,21 @@ This action is designed to be used in three different ways.
           path: artifacts
 ```
 
-### Putting it all together with Selenium to execute the tests
-
-> **_NOTE:_**
->
-> Examples on how to configure your repository to use Selenium can be found [here](???).
+### Putting it all together more generically using the Test Grid Url mode
 
 ```yaml
-      - name: Create Device Farm Project
+      - name: Create Device Farm Project and generate Grid URL
         id: project
         uses: aws-actions/aws-devicefarm-browser-testing@v2.0
         with:
-          mode: project
+          mode: gridurl
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
 
-      - name: Generate Test Grid URL
-        id: gridurl
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
-        with:
-          mode: gridurl
-          project-arn: ${{ steps.project.outputs.project-arn }}
-
       - name: Test
-        run: '???'
+        run: **TEST EXCUTION SCRIPT COMMAND HERE**
         env:
-          GRID_URL: ${{ steps.gridurl.outputs.grid-url }}
+          GRID_URL: ${{ steps.project.outputs.grid-url }}
+          GRID_URL_EXPIRES: ${{ steps.project.outputs.grid-url-expires }}
 
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
