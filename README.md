@@ -75,7 +75,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         with:
           mode: project
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -86,7 +86,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Lookup Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         with:
           mode: project
           project-arn: Test # A Project with name 'Test' already exists in the AWS Account in this case.
@@ -97,7 +97,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         with:
           mode: artifact
           project-arn: Test
@@ -116,7 +116,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         with:
           mode: artifact
           project-arn: Test
@@ -138,7 +138,7 @@ This action is designed to be used in two different ways.
 ```yaml
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         with:
           mode: project
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -153,7 +153,7 @@ This action is designed to be used in two different ways.
 
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           mode: artifact
@@ -184,7 +184,7 @@ This action relies on the [default behaviour of the AWS SDK for JavaScript](http
 
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v1
+        uses: aws-actions/aws-devicefarm-browser-testing@v1.0
         with:
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
 ```
