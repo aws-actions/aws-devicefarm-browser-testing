@@ -32,5 +32,5 @@ outputs:
   project-arn:
     description: 'The ARN of the AWS Device Farm Browser Testing Project'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
