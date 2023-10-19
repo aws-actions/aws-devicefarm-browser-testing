@@ -39,6 +39,7 @@ describe("Run", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockDeviceFarm.reset();
+        process.env.AWS_REGION = "us-west-2";
     });
 
     it("should fail if invalid mode is specified", async () => {
