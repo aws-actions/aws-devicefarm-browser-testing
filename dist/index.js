@@ -7,16 +7,21 @@
 const INPUTS = {
     mode: "mode",
     projectArn: "project-arn",
+    urlExpiresSeconds: "url-expires-seconds",
     artifactTypes: "artifact-types",
     artifactFolder: "artifact-folder",
 };
 
 const OUTPUTS = {
     projectArn: "project-arn",
+    consoleUrl: "console-url",
+    gridUrl: "grid-url",
+    gridUrlExpires: "grid-url-expires",
 };
 
 const MODE = {
     project: "project",
+    gridurl: "gridurl",
     artifact: "artifact",
 };
 
@@ -47,6 +52,7 @@ const {
     CreateTestGridProjectCommand,
     paginateListTestGridSessions,
     paginateListTestGridSessionArtifacts,
+    CreateTestGridUrlCommand,
 } = __nccwpck_require__(65321);
 const fs = __nccwpck_require__(73292);
 const core = __nccwpck_require__(42186);
@@ -76,6 +82,17 @@ async function getProjectArn(projectArn) {
     core.info(`Existing project with name ${projectArn} not found, so creating a new project...`);
     const createProjectRes = await deviceFarm.send(createProjectCommand);
     return createProjectRes.testGridProject.arn;
+}
+
+async function generateGridUrl(projectArn, expiresInSeconds) {
+    const createTestGridUrlCommand = new CreateTestGridUrlCommand({
+        projectArn: projectArn,
+        expiresInSeconds: expiresInSeconds
+    });
+    core.info("Generating Project Grid URL...");
+    const createTestGridUrlRes = await deviceFarm.send(createTestGridUrlCommand);
+    core.setOutput(OUTPUTS.gridUrl, createTestGridUrlRes.url);
+    core.setOutput(OUTPUTS.gridUrlExpires, createTestGridUrlRes.expires.toISOString());
 }
 
 async function loopSessions(projectArn, desiredTypes, artifactFolder) {
@@ -140,16 +157,21 @@ async function run() {
     const mode = core.getInput(INPUTS.mode, { required: true }).toLowerCase();
     if (mode in MODE) {
         let projectArn = core.getInput(INPUTS.projectArn, { required: true });
+        const urlExpiresSeconds = parseInt(core.getInput(INPUTS.urlExpiresSeconds, { required: false }));
         const artifactTypes = core.getInput(INPUTS.artifactTypes, { required: false }).split(",").map(v => v.trim()).filter(v => v !== "");
         const artifactFolder = core.getInput(INPUTS.artifactFolder, { required: false });
         try {
             // Set the projectArn to the actual Arn (in case a name is provided and project needs creating)
             projectArn = await getProjectArn(projectArn);
+            core.setOutput(OUTPUTS.projectArn, projectArn);
             // Parse the project id
             const projectId = projectArn.split(":")[6];
             core.info(`Project Id: ${projectId}.`);
-            // Set the output so this Arn can be used elsewhere in the GH workflow
-            core.setOutput(OUTPUTS.projectArn, projectArn);
+            const consoleUrl = `https://${process.env.AWS_REGION}.console.aws.amazon.com/devicefarm/home#/browser/projects/${projectId}/runsselenium`;
+            core.setOutput(OUTPUTS.consoleUrl, consoleUrl);
+            if (mode == MODE.gridurl) {
+                await generateGridUrl(projectArn, urlExpiresSeconds);
+            }
             if (mode == MODE.artifact && artifactTypes.length > 0) {
                 core.startGroup("Download artifacts");
                 await loopSessions(projectArn, artifactTypes, artifactFolder);
