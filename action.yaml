@@ -44,5 +44,5 @@ outputs:
   grid-url-expires:
     description: 'The Datetime that the supplied grid-url will expire formatted as YYYY-MM-DDThh:mm:ss.fffZ'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
