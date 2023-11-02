@@ -35,7 +35,7 @@ For example, testing new versions of code being committed to a branch to ensure 
 
 ## Input options
 
-- mode: **REQUIRED** The mode to execute the action in. Valid values are `project`, when you require creation or looking up of an AWS Device Farm Project ARN, or `artifact`, when you require retrieval of artifacts from an existing AWS Device Farm Project ARN.
+- mode: **REQUIRED** The mode to execute the action in. Valid values are `project`, when you require creation or looking up of an AWS Device Farm Project ARN, `gridurl` when you wish to generate a Grid URL, or `artifact`, when you require retrieval of artifacts from an existing AWS Device Farm Project ARN.
 - project-arn: **REQUIRED** The name (or arn) of the Device Farm Project. In addition to supporting the value of an ARN of an existing Project, this field supports the use of a **name** as well. For example, if `"project-arn": "Test"` is supplied, the Action will perform a lookup in the AWS Account to find and retrieve the ARN of the AWS Device Farm Project with the name `Test`. If a **name** is supplied but not found a new Project with the supplied name will be created and the ARN of that newly created Project will be used.
 - url-expires-seconds: **OPTIONAL** Lifetime, in seconds, of the Test Grid URL. Defaults to 900 if not specified.
 - artifact-types: **OPTIONAL** A comma-delimited list of artifacts to be downloaded after the run completes. The valid values can be found [here](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-device-farm/Variable/TestGridSessionArtifactCategory/). No artifacts will be downloaded if this property is not supplied.
