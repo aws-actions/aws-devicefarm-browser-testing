@@ -32423,6 +32423,29 @@ var Writable = (__nccwpck_require__(12781).Writable);
 var assert = __nccwpck_require__(39491);
 var debug = __nccwpck_require__(31133);
 
+// Whether to use the native URL object or the legacy url module
+var useNativeURL = false;
+try {
+  assert(new URL());
+}
+catch (error) {
+  useNativeURL = error.code === "ERR_INVALID_URL";
+}
+
+// URL fields to preserve in copy operations
+var preservedUrlFields = [
+  "auth",
+  "host",
+  "hostname",
+  "href",
+  "path",
+  "pathname",
+  "port",
+  "protocol",
+  "query",
+  "search",
+];
+
 // Create handlers that pass events from native requests
 var events = ["abort", "aborted", "connect", "error", "socket", "timeout"];
 var eventHandlers = Object.create(null);
@@ -32432,19 +32455,20 @@ events.forEach(function (event) {
   };
 });
 
+// Error types with codes
 var InvalidUrlError = createErrorType(
   "ERR_INVALID_URL",
   "Invalid URL",
   TypeError
 );
-// Error types with codes
 var RedirectionError = createErrorType(
   "ERR_FR_REDIRECTION_FAILURE",
   "Redirected request failed"
 );
 var TooManyRedirectsError = createErrorType(
   "ERR_FR_TOO_MANY_REDIRECTS",
-  "Maximum number of redirects exceeded"
+  "Maximum number of redirects exceeded",
+  RedirectionError
 );
 var MaxBodyLengthExceededError = createErrorType(
   "ERR_FR_MAX_BODY_LENGTH_EXCEEDED",
@@ -32479,7 +32503,13 @@ function RedirectableRequest(options, responseCallback) {
   // React to responses of native requests
   var self = this;
   this._onNativeResponse = function (response) {
-    self._processResponse(response);
+    try {
+      self._processResponse(response);
+    }
+    catch (cause) {
+      self.emit("error", cause instanceof RedirectionError ?
+        cause : new RedirectionError({ cause: cause }));
+    }
   };
 
   // Perform the first request
@@ -32697,8 +32727,7 @@ RedirectableRequest.prototype._performRequest = function () {
   var protocol = this._options.protocol;
   var nativeProtocol = this._options.nativeProtocols[protocol];
   if (!nativeProtocol) {
-    this.emit("error", new TypeError("Unsupported protocol " + protocol));
-    return;
+    throw new TypeError("Unsupported protocol " + protocol);
   }
 
   // If specified, use the agent corresponding to the protocol
@@ -32797,8 +32826,7 @@ RedirectableRequest.prototype._processResponse = function (response) {
   // RFC7231§6.4: A client SHOULD detect and intervene
   // in cyclical redirections (i.e., "infinite" redirection loops).
   if (++this._redirectCount > this._options.maxRedirects) {
-    this.emit("error", new TooManyRedirectsError());
-    return;
+    throw new TooManyRedirectsError();
   }
 
   // Store the request headers if applicable
@@ -32832,33 +32860,23 @@ RedirectableRequest.prototype._processResponse = function (response) {
   var currentHostHeader = removeMatchingHeaders(/^host$/i, this._options.headers);
 
   // If the redirect is relative, carry over the host of the last request
-  var currentUrlParts = url.parse(this._currentUrl);
+  var currentUrlParts = parseUrl(this._currentUrl);
   var currentHost = currentHostHeader || currentUrlParts.host;
   var currentUrl = /^\w+:/.test(location) ? this._currentUrl :
     url.format(Object.assign(currentUrlParts, { host: currentHost }));
 
-  // Determine the URL of the redirection
-  var redirectUrl;
-  try {
-    redirectUrl = url.resolve(currentUrl, location);
-  }
-  catch (cause) {
-    this.emit("error", new RedirectionError({ cause: cause }));
-    return;
-  }
-
   // Create the redirected request
-  debug("redirecting to", redirectUrl);
+  var redirectUrl = resolveUrl(location, currentUrl);
+  debug("redirecting to", redirectUrl.href);
   this._isRedirect = true;
-  var redirectUrlParts = url.parse(redirectUrl);
-  Object.assign(this._options, redirectUrlParts);
+  spreadUrlObject(redirectUrl, this._options);
 
   // Drop confidential headers when redirecting to a less secure protocol
   // or to a different domain that is not a superdomain
-  if (redirectUrlParts.protocol !== currentUrlParts.protocol &&
-     redirectUrlParts.protocol !== "https:" ||
-     redirectUrlParts.host !== currentHost &&
-     !isSubdomain(redirectUrlParts.host, currentHost)) {
+  if (redirectUrl.protocol !== currentUrlParts.protocol &&
+     redirectUrl.protocol !== "https:" ||
+     redirectUrl.host !== currentHost &&
+     !isSubdomain(redirectUrl.host, currentHost)) {
     removeMatchingHeaders(/^(?:authorization|cookie)$/i, this._options.headers);
   }
 
@@ -32873,23 +32891,12 @@ RedirectableRequest.prototype._processResponse = function (response) {
       method: method,
       headers: requestHeaders,
     };
-    try {
-      beforeRedirect(this._options, responseDetails, requestDetails);
-    }
-    catch (err) {
-      this.emit("error", err);
-      return;
-    }
+    beforeRedirect(this._options, responseDetails, requestDetails);
     this._sanitizeOptions(this._options);
   }
 
   // Perform the redirected request
-  try {
-    this._performRequest();
-  }
-  catch (cause) {
-    this.emit("error", new RedirectionError({ cause: cause }));
-  }
+  this._performRequest();
 };
 
 // Wraps the key/value object of protocols with redirect functionality
@@ -32909,27 +32916,16 @@ function wrap(protocols) {
 
     // Executes a request, following redirects
     function request(input, options, callback) {
-      // Parse parameters
-      if (isString(input)) {
-        var parsed;
-        try {
-          parsed = urlToOptions(new URL(input));
-        }
-        catch (err) {
-          /* istanbul ignore next */
-          parsed = url.parse(input);
-        }
-        if (!isString(parsed.protocol)) {
-          throw new InvalidUrlError({ input });
-        }
-        input = parsed;
+      // Parse parameters, ensuring that input is an object
+      if (isURL(input)) {
+        input = spreadUrlObject(input);
       }
-      else if (URL && (input instanceof URL)) {
-        input = urlToOptions(input);
+      else if (isString(input)) {
+        input = spreadUrlObject(parseUrl(input));
       }
       else {
         callback = options;
-        options = input;
+        options = validateUrl(input);
         input = { protocol: protocol };
       }
       if (isFunction(options)) {
@@ -32968,27 +32964,57 @@ function wrap(protocols) {
   return exports;
 }
 
-/* istanbul ignore next */
 function noop() { /* empty */ }
 
-// from https://github.com/nodejs/node/blob/master/lib/internal/url.js
-function urlToOptions(urlObject) {
-  var options = {
-    protocol: urlObject.protocol,
-    hostname: urlObject.hostname.startsWith("[") ?
-      /* istanbul ignore next */
-      urlObject.hostname.slice(1, -1) :
-      urlObject.hostname,
-    hash: urlObject.hash,
-    search: urlObject.search,
-    pathname: urlObject.pathname,
-    path: urlObject.pathname + urlObject.search,
-    href: urlObject.href,
-  };
-  if (urlObject.port !== "") {
-    options.port = Number(urlObject.port);
+function parseUrl(input) {
+  var parsed;
+  /* istanbul ignore else */
+  if (useNativeURL) {
+    parsed = new URL(input);
   }
-  return options;
+  else {
+    // Ensure the URL is valid and absolute
+    parsed = validateUrl(url.parse(input));
+    if (!isString(parsed.protocol)) {
+      throw new InvalidUrlError({ input });
+    }
+  }
+  return parsed;
+}
+
+function resolveUrl(relative, base) {
+  /* istanbul ignore next */
+  return useNativeURL ? new URL(relative, base) : parseUrl(url.resolve(base, relative));
+}
+
+function validateUrl(input) {
+  if (/^\[/.test(input.hostname) && !/^\[[:0-9a-f]+\]$/i.test(input.hostname)) {
+    throw new InvalidUrlError({ input: input.href || input });
+  }
+  if (/^\[/.test(input.host) && !/^\[[:0-9a-f]+\](:\d+)?$/i.test(input.host)) {
+    throw new InvalidUrlError({ input: input.href || input });
+  }
+  return input;
+}
+
+function spreadUrlObject(urlObject, target) {
+  var spread = target || {};
+  for (var key of preservedUrlFields) {
+    spread[key] = urlObject[key];
+  }
+
+  // Fix IPv6 hostname
+  if (spread.hostname.startsWith("[")) {
+    spread.hostname = spread.hostname.slice(1, -1);
+  }
+  // Ensure port is a number
+  if (spread.port !== "") {
+    spread.port = Number(spread.port);
+  }
+  // Concatenate path
+  spread.path = spread.search ? spread.pathname + spread.search : spread.pathname;
+
+  return spread;
 }
 
 function removeMatchingHeaders(regex, headers) {
@@ -33014,8 +33040,16 @@ function createErrorType(code, message, baseClass) {
 
   // Attach constructor and set default properties
   CustomError.prototype = new (baseClass || Error)();
-  CustomError.prototype.constructor = CustomError;
-  CustomError.prototype.name = "Error [" + code + "]";
+  Object.defineProperties(CustomError.prototype, {
+    constructor: {
+      value: CustomError,
+      enumerable: false,
+    },
+    name: {
+      value: "Error [" + code + "]",
+      enumerable: false,
+    },
+  });
   return CustomError;
 }
 
@@ -33043,6 +33077,10 @@ function isFunction(value) {
 
 function isBuffer(value) {
   return typeof value === "object" && ("length" in value);
+}
+
+function isURL(value) {
+  return URL && value instanceof URL;
 }
 
 // Exports
@@ -35893,7 +35931,7 @@ module.exports = require("zlib");
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
-// Axios v1.5.1 Copyright (c) 2023 Matt Zabriskie and contributors
+// Axios v1.6.0 Copyright (c) 2023 Matt Zabriskie and contributors
 
 
 const FormData$1 = __nccwpck_require__(64334);
@@ -37860,7 +37898,7 @@ function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 }
 
-const VERSION = "1.5.1";
+const VERSION = "1.6.0";
 
 function parseProtocol(url) {
   const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
@@ -38464,6 +38502,18 @@ const wrapAsync = (asyncExecutor) => {
   })
 };
 
+const resolveFamily = ({address, family}) => {
+  if (!utils.isString(address)) {
+    throw TypeError('address must be a string');
+  }
+  return ({
+    address,
+    family: family || (address.indexOf('.') < 0 ? 6 : 4)
+  });
+};
+
+const buildAddressEntry = (address, family) => resolveFamily(utils.isObject(address) ? address : {address, family});
+
 /*eslint consistent-return:0*/
 const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
   return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
@@ -38474,15 +38524,16 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     let rejected = false;
     let req;
 
-    if (lookup && utils.isAsyncFn(lookup)) {
-      lookup = callbackify$1(lookup, (entry) => {
-        if(utils.isString(entry)) {
-          entry = [entry, entry.indexOf('.') < 0 ? 6 : 4];
-        } else if (!utils.isArray(entry)) {
-          throw new TypeError('lookup async function must return an array [ip: string, family: number]]')
-        }
-        return entry;
-      });
+    if (lookup) {
+      const _lookup = callbackify$1(lookup, (value) => utils.isArray(value) ? value : [value]);
+      // hotfix to support opt.all option which is required for node 20.x
+      lookup = (hostname, opt, cb) => {
+        _lookup(hostname, opt, (err, arg0, arg1) => {
+          const addresses = utils.isArray(arg0) ? arg0.map(addr => buildAddressEntry(addr)) : [buildAddressEntry(arg0, arg1)];
+
+          opt.all ? cb(err, addresses) : cb(err, addresses[0].address, addresses[0].family);
+        });
+      };
     }
 
     // temporary internal emitter until the AxiosRequest class will be implemented
@@ -38885,7 +38936,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
             }
             response.data = responseData;
           } catch (err) {
-            reject(AxiosError.from(err, null, config, response.request, response));
+            return reject(AxiosError.from(err, null, config, response.request, response));
           }
           settle(resolve, reject, response);
         });
@@ -39268,8 +39319,8 @@ const xhrAdapter = isXHRAdapterSupported && function (config) {
     // Specifically not if we're in a web worker, or react-native.
     if (platform.isStandardBrowserEnv) {
       // Add xsrf header
-      const xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath))
-        && config.xsrfCookieName && cookies.read(config.xsrfCookieName);
+      // regarding CVE-2023-45857 config.withCredentials condition was removed temporarily
+      const xsrfValue = isURLSameOrigin(fullPath) && config.xsrfCookieName && cookies.read(config.xsrfCookieName);
 
       if (xsrfValue) {
         requestHeaders.set(config.xsrfHeaderName, xsrfValue);
