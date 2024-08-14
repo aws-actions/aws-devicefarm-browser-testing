@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.2 (2024-08-14)
+
+> Fixed dependabot security finding [#7](https://github.com/aws-actions/aws-devicefarm-browser-testing/security/dependabot/7).
+
 ## 2.1 (2024-07-30)
 
 > Fixed dependabot security finding [#6](https://github.com/aws-actions/aws-devicefarm-browser-testing/security/dependabot/6).
