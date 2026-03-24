@@ -2,11 +2,12 @@
   "name": "aws-device-farm-browser-testing",
   "version": "1.0.0",
   "description": "Simplifies Automated Browser Testing on AWS Device Farm",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "lint": "eslint **.js",
-    "package": "ncc build index.js -o dist",
-    "test": "jest --coverage --verbose"
+    "package": "rollup --config rollup.config.js",
+    "test": "vitest run --coverage"
   },
   "keywords": [
     "AWS",
@@ -18,17 +19,20 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^3.0.0",
-    "@aws-sdk/client-device-farm": "^3.980.0",
-    "axios": "^1.13.5"
+    "@aws-sdk/client-device-farm": "^3.1015.0",
+    "axios": "^1.13.6"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.1",
-    "aws-sdk-client-mock": "^4.0.1",
-    "aws-sdk-client-mock-jest": "^4.0.1",
-    "eslint": "^9.8.0",
-    "jest": "^29.7.0"
-  },
-  "overrides": {
-    "fast-xml-parser": "^5.3.4"
+    "@eslint/js": "^10.0.1",
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@vitest/coverage-v8": "^4.1.1",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-vitest": "^7.0.1",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
+    "rollup": "^4.60.0",
+    "vitest": "^4.1.1"
   }
 }
