@@ -1,15 +1,15 @@
-const {
+import {
     DeviceFarmClient,
     paginateListTestGridProjects,
     CreateTestGridProjectCommand,
     paginateListTestGridSessions,
     paginateListTestGridSessionArtifacts,
     CreateTestGridUrlCommand,
-} = require("@aws-sdk/client-device-farm");
-const fs = require("fs/promises");
-const core = require("@actions/core");
-const axios = require("axios");
-const { INPUTS, OUTPUTS, MODE, SESSION } = require("./constants.js");
+} from "@aws-sdk/client-device-farm";
+import fs from "fs/promises";
+import * as core from "@actions/core";
+import axios from "axios";
+import { INPUTS, OUTPUTS, MODE, SESSION } from "./constants.js";
 
 const deviceFarm = new DeviceFarmClient();
 
@@ -137,11 +137,11 @@ async function run() {
     }
 }
 
-module.exports = {
+export {
     run,
 };
 
 /* istanbul ignore next */
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     run();
 }

@@ -68,10 +68,10 @@ This action is designed to be used in three different ways.
 
 ```yaml
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2 # More information on this action can be found below in the 'AWS Credentials' section
+        uses: aws-actions/configure-aws-credentials@v6 # More information on this action can be found below in the 'AWS Credentials' section
         with:
           role-to-assume: arn:aws:iam::123456789012:role/my-github-actions-role
           aws-region: us-west-2
@@ -82,7 +82,7 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: project
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -93,7 +93,7 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Lookup Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: project
           project-arn: Test # A Project with name 'Test' already exists in the AWS Account in this case.
@@ -104,7 +104,7 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Generate Test Grid URL
         id: gridurl
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: gridurl
           project-arn: Test # A Project with name 'Test' already exists in the AWS Account in this case.
@@ -115,14 +115,14 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: artifact
           project-arn: Test
           artifact-types: ALL
           artifact-folder: deviceFarm
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         if: always() # This ensures the artifacts are uploaded even if the Test Run Fails
         with:
           name: AutomatedTestOutputFiles
@@ -134,13 +134,13 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: artifact
           project-arn: Test
           artifact-types: VIDEO,LOG
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           name: AutomatedTestOutputFiles
@@ -156,7 +156,7 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: project
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -171,14 +171,14 @@ This action is designed to be used in three different ways.
 
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           mode: artifact
           project-arn: ${{ steps.project.outputs.project-arn }}
           artifact-types: ALL
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           name: AutomatedTestOutputFiles
@@ -190,7 +190,7 @@ This action is designed to be used in three different ways.
 ```yaml
       - name: Create Device Farm Project and generate Grid URL
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           mode: gridurl
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
@@ -203,14 +203,14 @@ This action is designed to be used in three different ways.
 
       - name: Retrieve Device Farm Project Artifacts
         id: artifacts
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           mode: artifact
           project-arn: ${{ steps.project.outputs.project-arn }}
           artifact-types: ALL
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         if: always() # This ensures the artifacts are retrieved even if the test(s) fails
         with:
           name: AutomatedTestOutputFiles
@@ -227,14 +227,14 @@ This action relies on the [default behaviour of the AWS SDK for JavaScript](http
 
 ```yaml
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::123456789012:role/my-github-actions-role
           aws-region: us-west-2
 
       - name: Create Device Farm Project
         id: project
-        uses: aws-actions/aws-devicefarm-browser-testing@v2.0
+        uses: aws-actions/aws-devicefarm-browser-testing@v3
         with:
           project-arn: GitHubAction_${{ github.run_id }}_${{ github.run_attempt }}
 ```

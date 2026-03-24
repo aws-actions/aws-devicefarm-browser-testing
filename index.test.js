@@ -1,22 +1,23 @@
-const { run } = require("./index.js");
-const {
+import { vi } from "vitest";
+import { run } from "./index.js";
+import {
     DeviceFarmClient,
     ListTestGridProjectsCommand,
     CreateTestGridProjectCommand,
     CreateTestGridUrlCommand,
     ListTestGridSessionsCommand,
     ListTestGridSessionArtifactsCommand,
-} = require("@aws-sdk/client-device-farm");
-const axios = require("axios");
-const fs = require("fs/promises");
-const core = require("@actions/core");
-const { MODE, SESSION } = require("./constants");
-const { mockClient } = require("aws-sdk-client-mock");
-require("aws-sdk-client-mock-jest");
+} from "@aws-sdk/client-device-farm";
+import axios from "axios";
+import fs from "fs/promises";
+import * as core from "@actions/core";
+import { MODE, SESSION } from "./constants";
+import { mockClient } from "aws-sdk-client-mock";
+import "aws-sdk-client-mock-vitest";
 
-jest.mock("axios");
-jest.mock("fs/promises");
-jest.mock("@actions/core");
+vi.mock("axios");
+vi.mock("fs/promises");
+vi.mock("@actions/core");
 
 function mockGetInput(requestResponse) {
     const defaults = {
@@ -37,7 +38,7 @@ const mockDeviceFarm = mockClient(DeviceFarmClient);
 describe("Run", () => {
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockDeviceFarm.reset();
         process.env.AWS_REGION = "us-west-2";
     });
@@ -46,7 +47,7 @@ describe("Run", () => {
         const INPUTS = {
             "mode": "bad-mode",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
 
         await run();
 
@@ -60,7 +61,7 @@ describe("Run", () => {
             "artifact-types": "ALL",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridProjectsCommand, {})
             .resolvesOnce({
@@ -98,7 +99,7 @@ describe("Run", () => {
             "artifact-types": "ALL",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridProjectsCommand, {})
             .resolvesOnce({
@@ -125,7 +126,7 @@ describe("Run", () => {
             "artifact-types": "ALL",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
 
         await run();
 
@@ -140,7 +141,7 @@ describe("Run", () => {
             "mode": "gridurl",
             "project-arn": "arn:fake-arn",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(CreateTestGridUrlCommand, {
                 projectArn: "arn:fake-arn",
@@ -169,7 +170,7 @@ describe("Run", () => {
             "artifact-types": "VIDEO",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridSessionsCommand, {
                 projectArn: "arn:fake-arn"
@@ -216,7 +217,7 @@ describe("Run", () => {
             "artifact-types": "ALL",
             "artifact-folder": "fake-folder",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridSessionsCommand, {
                 projectArn: "arn:fake-arn"
@@ -269,7 +270,7 @@ describe("Run", () => {
             "artifact-types": "ALL",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridSessionsCommand, {
                 projectArn: "arn:aws:devicefarm:us-west-2:123456789012:testgrid-project:bad-id"
@@ -291,7 +292,7 @@ describe("Run", () => {
             "artifact-types": "fake-type",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridSessionsCommand, {
                 projectArn: "arn:fake-arn"
@@ -328,7 +329,7 @@ describe("Run", () => {
             "artifact-types": "VIDEO",
             "artifact-folder": "",
         };
-        core.getInput = jest.fn().mockImplementation(mockGetInput(INPUTS));
+        core.getInput = vi.fn().mockImplementation(mockGetInput(INPUTS));
         mockDeviceFarm
             .on(ListTestGridSessionsCommand, {
                 projectArn: "arn:fake-arn"
