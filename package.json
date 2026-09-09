@@ -27,12 +27,12 @@
     "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@vitest/coverage-v8": "^4.1.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-vitest": "^7.0.1",
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
     "rollup": "^4.60.0",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.11"
   }
 }
